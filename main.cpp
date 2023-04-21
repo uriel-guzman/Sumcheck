@@ -1,25 +1,25 @@
 #include "verifier.h"
 
-int64_t g(Poly& poly) {
+int64_t booleanHypercubeSum(Poly& g) {
   int64_t sum = 0;
 
-  for (int mask = 0; mask < (1 << poly.numVariables); mask++) {
+  for (int mask = 0; mask < (1 << g.numVariables); mask++) {
     vector<int64_t> x;
 
-    for (int i = 0; i < poly.numVariables; i++) {
+    for (int i = 0; i < g.numVariables; i++) {
       x.push_back((mask >> i) & 1);
     }
 
-    sum += poly.eval(x);
+    sum += g.eval(x);
     sum %= F;
   }
 
   return sum;
 }
 
-pair<bool, bool> predict(Poly& poly, int64_t H) {
-  Prover prover(poly, H);
-  int64_t sum = g(poly);
+pair<bool, bool> predict(Poly& g, int64_t H) {
+  Prover prover(g, H);
+  int64_t sum = booleanHypercubeSum(g);
   Verifier verifier;
   return {verifier.accept(prover), sum == H};
 }
@@ -27,11 +27,11 @@ pair<bool, bool> predict(Poly& poly, int64_t H) {
 void exampleTest() {
   // Let g(x1, x2, x3) = 2 * x1^3 + x1 * x3 + x2 * x3
   // x1 is of degree 4, x2 and x3 are of degree 2
-  Poly poly(vector<int64_t>{4, 2, 2});
-  poly[{3, 0, 0}] = 2;
-  poly[{1, 0, 1}] = 1;
-  poly[{0, 1, 1}] = 1;
-  auto [veredict, expectedVeredict] = predict(poly, 12);
+  Poly g(vector<int64_t>{4, 2, 2});
+  g[{3, 0, 0}] = 2;
+  g[{1, 0, 1}] = 1;
+  g[{0, 1, 1}] = 1;
+  auto [veredict, expectedVeredict] = predict(g, 12);
   cout << "Example test\n";
   cout << "Veredict: " << veredict << '\n';
   cout << "Expected veredict: " << expectedVeredict << '\n';
@@ -56,7 +56,7 @@ pair<Poly, int64_t> createTestCase(int maxTerms = 10,
             return i * j;
           })));
 
-  Poly poly(deg);
+  Poly g(deg);
 
   auto genTerm = [&]() {
     vector<int64_t> term;
@@ -73,24 +73,24 @@ pair<Poly, int64_t> createTestCase(int maxTerms = 10,
 
     do {
       term = genTerm();
-    } while (poly.count(term));
+    } while (g.count(term));
 
-    poly[term] = random(0, maxCoef);
+    g[term] = random(0, maxCoef);
   }
 
   // Random H, but not so random
-  int64_t H = g(poly) + random(-5, +5);
+  int64_t H = booleanHypercubeSum(g) + random(-5, +5);
   H += F;
   H %= F;
-  return {poly, H};
+  return {g, H};
 }
 
 void runRandomizedTests(int numTests = 1000) {
   int confusionMatrix[2][2] = {};
 
   for (int it = 0; it < numTests; it++) {
-    auto [poly, H] = createTestCase();
-    auto [veredict, expectedVeredict] = predict(poly, H);
+    auto [g, H] = createTestCase();
+    auto [veredict, expectedVeredict] = predict(g, H);
     confusionMatrix[veredict][expectedVeredict]++;
   }
 

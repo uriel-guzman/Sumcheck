@@ -4,26 +4,25 @@ struct Prover {
   // Note: g is private, this emphasizes that only the prover knows how g looks
   // like
   private:
-    Poly poly;
+    Poly g;
 
   public:
     int64_t H;
     vector<int64_t> r;
     int numVariables;
 
-    Prover(const Poly& poly, int H) {
-      this->poly = poly;
-      numVariables = poly.numVariables;
+    Prover(const Poly& g, int64_t H) {
+      this->g = g;
+      numVariables = g.numVariables;
       this->H = H;
     }
 
     int64_t eval(const vector<int64_t>& x) {
-      return poly.eval(x);
+      return g.eval(x);
     }
 
     int64_t s(int x, bool current) {
-      // s(x) = g(r[0], r[1], ..., r[i - 1], x, x[i + 1], x[i + 2], ..., x[i + n -
-      // 1])
+      // s(x) = g(r[0], r[1], ..., r[i - 1], x, x[i + 1], x[i + 2], ..., x[n - 1])
 
       // Note: If current equals false, then s[i](x) is actually s[i - 1](x)
       // by removing the previous random field element r[i], this is important
@@ -46,7 +45,7 @@ struct Prover {
           input.push_back((mask >> i) & 1);
         }
 
-        sum += poly.eval(input);
+        sum += g.eval(input);
         sum %= F;
       }
 
